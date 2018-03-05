@@ -3,9 +3,7 @@ package com.batian.weatherdata.jdbc;
 import com.batian.weatherdata.conf.ConfigurationManager;
 import com.batian.weatherdata.constant.Constants;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.LinkedList;
 
 /**
@@ -112,6 +110,71 @@ public class JDBCHelper {
         }
     }
 
+    /**
+     * 增删改查
+     * 1.增删改SQL语句的执行方法
+     */
+    public int executeUpdata(String sql ,Object[] params) {
+        int rtn = 0;
+        Connection conn = null;
+        PreparedStatement pstmt;
 
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+            rtn = pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally {
+            if (conn != null) {
+                datasource.push(conn);
+            }
+        }
+
+        return rtn;
+    }
+
+    /**
+     * execute select SQL
+     */
+    public void executeQuery(String sql, Object[] params, QueryCallback callback) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getConnection();
+            pstmt = conn.prepareStatement(sql);
+
+            for (int i = 0; i < params.length; i++) {
+                pstmt.setObject(i + 1, params[i]);
+            }
+
+            rs = pstmt.executeQuery();
+            callback.process(rs );
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (conn != null) {
+                datasource.push(conn);
+            }
+        }
+    }
+
+    /**
+     * 静态内部类:查询回调接口
+     */
+    public static interface QueryCallback {
+        /**
+         *         handle query result
+         *         @param rs
+         */
+        void process(ResultSet rs) throws Exception;
+    }
 
 }
